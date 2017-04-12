@@ -1,0 +1,27 @@
+{application, transaktion,
+ [ {description,  "Transaction engine."}
+ , {vsn,          "0.0.1"}
+ , {id,           "transaktion"}
+ , {modules,      [ trans_app
+                  , trans_sup
+                  , db_core_sup
+                  , db_trans_sup
+                  , db_core
+                  , db_trans
+                  , db_backend]}
+ , {registered, [trans_app]}
+ , {applications, [kernel, stdlib]}
+ , {mod, {trans_app, []}}
+ , {maintainers, ["Kristian Sallberg"]}
+ , {licenses, ["BSD-2-Clause"]}
+ , {lager,
+     [ {log_root, "log/"}
+     , {handlers, [ {lager_console_backend, info}
+                  , {lager_file_backend, [{file, "error.log"}, {level, error}]}
+                  , {lager_file_backend, [{file, "console.log"}, {level, info}]}
+                  ]}
+     , {colored, true}
+     ]
+   }
+ ]
+}.

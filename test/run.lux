@@ -1,0 +1,6 @@
+[doc Sanity check]
+
+[shell cli]
+    !echo hej
+    ???hej
+    ?SH-PROMPT:
