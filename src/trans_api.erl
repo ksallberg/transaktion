@@ -23,9 +23,35 @@
 %% ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 %% OF THE POSSIBILITY OF SUCH DAMAGE.
 
--module(db_backend).
+-module(trans_api).
 
 -author('kristian@purestyle.se').
 
--callback store(term()) -> ok | {error, string()}.
--callback read(string()) -> term() | {error, string()}.
+-export([ create/1
+        , discard/1
+        , commit/1
+        , add/2
+        , delete/2
+        , read/2]).
+
+-type transaction() :: pid().
+
+%% Delegate creation to the supervisor
+-spec create([term()]) -> {ok, transaction()}.
+create(_Options) ->
+    db_trans_sup:create().
+
+discard(_Th) ->
+    ok.
+
+commit(_Th) ->
+    ok.
+
+add(_Th, {_Table, _Data}) ->
+    ok.
+
+delete(_Th, {_Table, _Data}) ->
+    ok.
+
+read(_Th, {_Table, _Data}) ->
+    ok.

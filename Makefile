@@ -1,7 +1,7 @@
 build:
 	rebar3 compile
 
-start:
+start: build
 	erl -boot start_sasl -pa _build/default/lib/*/ebin \
             -pa priv -eval "application:start(transaktion)"
 

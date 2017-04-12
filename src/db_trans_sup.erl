@@ -30,7 +30,8 @@
 -behavior(supervisor).
 
 -export([ start_link/0
-        , init/1]).
+        , init/1
+        , create/0]).
 
 start_link() ->
     supervisor:start_link( {local, ?MODULE}
@@ -50,3 +51,6 @@ init(_Whatever) ->
                  intensity => 10,
                  preiod    => 60},
     {ok, {SupFlags, ChildSpec}}.
+
+create() ->
+    supervisor:start_child(?MODULE, []).

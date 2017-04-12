@@ -30,12 +30,13 @@
 -behaviour(gen_server).
 
 -export([start_link/0]).
--export([init/1,
-         handle_call/3,
-         handle_cast/2,
-         handle_info/2,
-         terminate/2,
-         code_change/3]).
+
+-export([ init/1
+        , handle_call/3
+        , handle_cast/2
+        , handle_info/2
+        , terminate/2
+        , code_change/3]).
 
 % State while receiving bytes from the tcp socket
 -record(state, { flags         :: integer()
@@ -45,16 +46,20 @@
 
 -define(TIMEOUT, infinity).
 
+%% Interface: __________________________________________________________________
+
 start_link() ->
     gen_server:start_link(?MODULE, [], []).
 
+%% Gen Serv:  __________________________________________________________________
+
 init(_Whatever) ->
+    lager:log(info, self(), "New transaction created", []),
     {ok, #state{}}.
 
 -spec handle_cast({data, string()} | timeout | {socket_ready, port()}, state())
     -> {stop, normal, state()} | {noreply, state(), infinity}.
 handle_cast(timeout, State) ->
-    error_logger:error_msg("~p Client connection timeout.~n", [self()]),
     {stop, normal, State}.
 
 -spec handle_call(any(), {pid(), any()}, state()) -> {stop, tuple(), state()}.
