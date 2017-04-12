@@ -1,6 +1,17 @@
 [doc Sanity check]
 
 [shell cli]
-    !echo hej
-    ???hej
+    !make -C ../ start
+    ???Eshell
+    ???1>
+    ???[info] Application transaktion started
+
+    # Actual test...
+    !trans_api:create([read]).
+    ???[info] New transaction created
+
+    !q().
     ?SH-PROMPT:
+
+    !echo ==$?==
+    ?==0==
