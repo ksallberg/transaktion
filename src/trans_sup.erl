@@ -36,14 +36,14 @@ start_link() ->
     supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
 init(_Whatever) ->
-    CoreSup = #{id       => db_core,
-                start    => {db_core,
-                             start_link,
-                             []},
-                restart  => permanent,
-                shutdown => 1000,
-                type     => worker,
-                modules  => [db_core]},
+    CoreServ = #{id       => db_core,
+                 start    => {db_core,
+                              start_link,
+                              []},
+                 restart  => permanent,
+                 shutdown => 1000,
+                 type     => worker,
+                 modules  => [db_core]},
 
     TransSup = #{id       => db_trans_sup,
                  start    => {db_trans_sup,
@@ -58,5 +58,5 @@ init(_Whatever) ->
                  intensity => 10,
                  preiod    => 60},
 
-    {ok, {SupFlags, [ CoreSup
+    {ok, {SupFlags, [ CoreServ
                     , TransSup]}}.

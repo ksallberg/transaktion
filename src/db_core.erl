@@ -49,6 +49,8 @@ start_link() ->
     gen_server:start_link(?MODULE, [], []).
 
 init(_Whatever) ->
+    erlang:register(db_core, self()),
+    lager:log(info, self(), "db_core running...", []),
     {ok, #state{}}.
 
 -spec handle_cast({data, string()} | timeout | {socket_ready, port()}, state())
@@ -64,7 +66,8 @@ handle_call(Request, _From, State) ->
 -spec handle_info(any(), state() | port()) -> {noreply, state()} |
                                               {stop, normal, state()} |
                                               {noreply, state(), infinity}.
-handle_info(_Info, StateData) ->
+handle_info(Info, StateData) ->
+    lager:log(info, self(), "Unknown message received: ~p", [Info]),
     {noreply, StateData}.
 
 -spec terminate(any(), state()) -> ok.
