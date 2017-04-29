@@ -37,21 +37,51 @@
 -type transaction() :: pid().
 
 %% Delegate creation to the supervisor
--spec create([term()]) -> {ok, transaction()}.
+-spec create([term()]) -> transaction().
 create(_Options) ->
     db_trans_sup:create().
 
-discard(_Th) ->
-    ok.
+discard(Th) ->
+    try
+        gen_server:call(Th, discard)
+    catch exit:{normal, {gen_server, call, _}} ->
+            {ok, transaction_discarded}
+    end.
 
-commit(_Th) ->
-    ok.
+add(Th, {_Table, {Key, Val}}) ->
+    case gen_server:call(Th, {add, Key, Val}) of
+        key_added ->
+            {ok, key_added, Key};
+        Err ->
+            {error, Err}
+    end.
 
-add(_Th, {_Table, _Data}) ->
-    ok.
+delete(Th, {_Table, Key}) ->
+    case gen_server:call(Th, {delete, Key}) of
+        key_deleted ->
+            {ok, key_deleted, Key};
+        Err ->
+            {error, Err}
+    end.
 
-delete(_Th, {_Table, _Data}) ->
-    ok.
+read(Th, {_Table, Key}) ->
+    case gen_server:call(Th, {read, Key}) of
+        {kv_pair, []} ->
+            {error, no_result};
+        {kv_pair, Result} ->
+            {ok, value, Result};
+        Err ->
+            {error, Err}
+    end.
 
-read(_Th, {_Table, _Data}) ->
-    ok.
+commit(Th) ->
+    case gen_server:call(Th, commit) of
+        commited ->
+            {ok, commited};
+        no_op ->
+            {error, no_op};
+        val_error ->
+            {error, val_error};
+        Err ->
+            {error, Err}
+    end.

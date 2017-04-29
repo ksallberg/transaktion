@@ -39,7 +39,8 @@
         , code_change/3]).
 
 % State while receiving bytes from the tcp socket
--record(state, { flags         :: integer()
+-record(state, { flags     :: integer()
+               , data = [] :: [term()]
                }).
 
 -type state() :: #state{}.
@@ -63,6 +64,27 @@ handle_cast(timeout, State) ->
     {stop, normal, State}.
 
 -spec handle_call(any(), {pid(), any()}, state()) -> {stop, tuple(), state()}.
+handle_call(discard, _From, State) ->
+    {stop, normal, State};
+
+handle_call({add, Key, Val}, _From, #state{data = Data} = State) ->
+    NewData = Data ++ [{Key, Val}],
+    {reply, key_added, State#state{data = NewData}};
+
+handle_call({delete, Key}, _From, #state{data = Data} = State) ->
+    NewData = [{StoredKey, Value} ||
+                  {StoredKey, Value} <- Data, StoredKey /= Key],
+    {reply, key_deleted, State#state{data = NewData}};
+
+handle_call({read, Key}, _From, #state{data = Data} = State) ->
+    Result = [Value ||
+                  {StoredKey, Value} <- Data, StoredKey == Key],
+    {reply, {kv_pair, Result}, State};
+
+handle_call(commit, _From, #state{data = Data} = State) ->
+    CommitResult = gen_server:call(db_core, {commit, Data}),
+    {reply, CommitResult, State};
+
 handle_call(Request, _From, State) ->
     {stop, {Request, undefined_event}, State}.
 
@@ -73,7 +95,7 @@ handle_info(_Info, StateData) ->
     {noreply, StateData}.
 
 -spec terminate(any(), state()) -> ok.
-terminate(_Reason, #state{flags  = _Flags} = _State) ->
+terminate(_Reason, #state{} = _State) ->
     ok.
 
 %% For now, just return the received state data

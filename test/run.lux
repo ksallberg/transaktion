@@ -7,8 +7,20 @@
     ???[info] Application transaktion started
 
     # Actual test...
-    !trans_api:create([read]).
+    !{ok, Th} = trans_api:create([read]).
     ???[info] New transaction created
+
+    !trans_api:add(Th, {tab, {k1, v1}}).
+    ???{ok,key_added,k1}
+
+    !trans_api:read(Th, {tab, k1}).
+    ???{ok,value,[v1]}
+
+    !trans_api:delete(Th, {tab, k1}).
+    ???{ok,key_deleted,k1}
+
+    !trans_api:discard(Th).
+    ???{ok,transaction_discarded}
 
     !q().
     ?SH-PROMPT:
