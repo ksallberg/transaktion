@@ -48,24 +48,24 @@ discard(Th) ->
             {ok, transaction_discarded}
     end.
 
-add(Th, {_Table, {Key, Val}}) ->
-    case gen_server:call(Th, {add, Key, Val}) of
+add(Th, {Table, {Key, Val}}) ->
+    case gen_server:call(Th, {add, Table, Key, Val}) of
         key_added ->
             {ok, key_added, Key};
         Err ->
             {error, Err}
     end.
 
-delete(Th, {_Table, Key}) ->
-    case gen_server:call(Th, {delete, Key}) of
+delete(Th, {Table, Key}) ->
+    case gen_server:call(Th, {delete, Table, Key}) of
         key_deleted ->
             {ok, key_deleted, Key};
         Err ->
             {error, Err}
     end.
 
-read(Th, {_Table, Key}) ->
-    case gen_server:call(Th, {read, Key}) of
+read(Th, {Table, Key}) ->
+    case gen_server:call(Th, {read, Table, Key}) of
         {kv_pair, []} ->
             {error, no_result};
         {kv_pair, Result} ->

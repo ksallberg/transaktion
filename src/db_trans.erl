@@ -39,8 +39,8 @@
         , code_change/3]).
 
 % State while receiving bytes from the tcp socket
--record(state, { flags     :: integer()
-               , data = [] :: [term()]
+-record(state, { flags        :: integer()
+               , tables = #{} :: map()
                }).
 
 -type state() :: #state{}.
@@ -67,22 +67,41 @@ handle_cast(timeout, State) ->
 handle_call(discard, _From, State) ->
     {stop, normal, State};
 
-handle_call({add, Key, Val}, _From, #state{data = Data} = State) ->
-    NewData = Data ++ [{Key, Val}],
-    {reply, key_added, State#state{data = NewData}};
+handle_call({add, Tab, Key, Val}, _From, #state{tables = Tables} = State) ->
+    case maps:find(Tab, Tables) of
+        {ok, Data} ->
+            NewData = Data ++ [{Key, Val}],
+            NewTables = maps:update(Tab, NewData, Tables),
+            {reply, key_added, State#state{tables = NewTables}};
+        error ->
+            NewData = [{Key, Val}],
+            NewTables = maps:put(Tab, NewData, Tables),
+            {reply, key_added, State#state{tables = NewTables}}
+    end;
 
-handle_call({delete, Key}, _From, #state{data = Data} = State) ->
-    NewData = [{StoredKey, Value} ||
-                  {StoredKey, Value} <- Data, StoredKey /= Key],
-    {reply, key_deleted, State#state{data = NewData}};
+handle_call({delete, Tab, Key}, _From, #state{tables = Tables} = State) ->
+    case maps:find(Tab, Tables) of
+        {ok, Data} ->
+            NewData = [{StoredKey, Value} ||
+                          {StoredKey, Value} <- Data, StoredKey /= Key],
+            NewTables = maps:update(Tab, NewData, Tables),
+            {reply, key_deleted, State#state{tables = NewTables}};
+        error ->
+            {reply, error, State}
+    end;
 
-handle_call({read, Key}, _From, #state{data = Data} = State) ->
-    Result = [Value ||
-                  {StoredKey, Value} <- Data, StoredKey == Key],
-    {reply, {kv_pair, Result}, State};
+handle_call({read, Tab, Key}, _From, #state{tables = Tables} = State) ->
+    case maps:find(Tab, Tables) of
+        {ok, Data} ->
+            Result = [Value ||
+                         {StoredKey, Value} <- Data, StoredKey == Key],
+            {reply, {kv_pair, Result}, State};
+        error ->
+            {reply, error, State}
+    end;
 
-handle_call(commit, _From, #state{data = Data} = State) ->
-    CommitResult = gen_server:call(db_core, {commit, Data}),
+handle_call(commit, _From, #state{tables = Tables} = State) ->
+    CommitResult = gen_server:call(db_core, {commit, Tables}),
     {reply, CommitResult, State};
 
 handle_call(Request, _From, State) ->
