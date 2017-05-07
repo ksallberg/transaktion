@@ -60,6 +60,20 @@ init(_Whatever) ->
 
 -spec handle_cast({data, string()} | timeout | {socket_ready, port()}, state())
     -> {stop, normal, state()} | {noreply, state(), infinity}.
+handle_cast(debug, #state{tables = Tables} = State) ->
+    TablesLs = maps:to_list(Tables),
+    DebugFInner = fun({Key, Value}) ->
+                          lager:log(info, self(),
+                                    "  Key: ~p, Value: ~p", [Key, Value])
+                  end,
+    DebugF = fun({TableName, TableData}) ->
+                     TableDataLs = maps:to_list(TableData),
+                     lager:log(info, self(), "Table: ~p", [TableName]),
+                     lists:foreach(DebugFInner, TableDataLs)
+             end,
+    lists:foreach(DebugF, TablesLs),
+    {noreply, State};
+
 handle_cast(timeout, State) ->
     {stop, normal, State}.
 
@@ -70,11 +84,11 @@ handle_call(discard, _From, State) ->
 handle_call({add, Tab, Key, Val}, _From, #state{tables = Tables} = State) ->
     case maps:find(Tab, Tables) of
         {ok, Data} ->
-            NewData = Data ++ [{Key, Val}],
+            NewData   = maps:put(Key, Val, Data),
             NewTables = maps:update(Tab, NewData, Tables),
             {reply, key_added, State#state{tables = NewTables}};
         error ->
-            NewData = [{Key, Val}],
+            NewData   = maps:put(Key, Val, #{}),
             NewTables = maps:put(Tab, NewData, Tables),
             {reply, key_added, State#state{tables = NewTables}}
     end;
@@ -82,8 +96,7 @@ handle_call({add, Tab, Key, Val}, _From, #state{tables = Tables} = State) ->
 handle_call({delete, Tab, Key}, _From, #state{tables = Tables} = State) ->
     case maps:find(Tab, Tables) of
         {ok, Data} ->
-            NewData = [{StoredKey, Value} ||
-                          {StoredKey, Value} <- Data, StoredKey /= Key],
+            NewData   = maps:remove(Key, Data),
             NewTables = maps:update(Tab, NewData, Tables),
             {reply, key_deleted, State#state{tables = NewTables}};
         error ->
@@ -93,9 +106,12 @@ handle_call({delete, Tab, Key}, _From, #state{tables = Tables} = State) ->
 handle_call({read, Tab, Key}, _From, #state{tables = Tables} = State) ->
     case maps:find(Tab, Tables) of
         {ok, Data} ->
-            Result = [Value ||
-                         {StoredKey, Value} <- Data, StoredKey == Key],
-            {reply, {kv_pair, Result}, State};
+            case maps:find(Key, Data) of
+                error ->
+                    {reply, error, State};
+                {ok, Result} ->
+                    {reply, {kv_pair, {Key, Result}}, State}
+            end;
         error ->
             {reply, error, State}
     end;

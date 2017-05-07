@@ -32,7 +32,8 @@
         , commit/1
         , add/2
         , delete/2
-        , read/2]).
+        , read/2
+        , debug/1]).
 
 -type transaction() :: pid().
 
@@ -66,10 +67,8 @@ delete(Th, {Table, Key}) ->
 
 read(Th, {Table, Key}) ->
     case gen_server:call(Th, {read, Table, Key}) of
-        {kv_pair, []} ->
-            {error, no_result};
-        {kv_pair, Result} ->
-            {ok, value, Result};
+        {kv_pair, {_Key, Value}} ->
+            {ok, value, Value};
         Err ->
             {error, Err}
     end.
@@ -85,3 +84,6 @@ commit(Th) ->
         Err ->
             {error, Err}
     end.
+
+debug(Th) ->
+    gen_server:cast(Th, debug).
