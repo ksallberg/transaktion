@@ -19,9 +19,14 @@
     ???{ok,value,v1}
     ???>
 
+    !trans_api:add(Th, {tab, {k2, v2}}).
+    ???{ok,key_added,k2}
+    ???>
+
     !trans_api:debug(Th).
     ???[info] Table: tab
     ???[info]   Key: k1, Value: v1
+    ???[info]   Key: k2, Value: v2
     ???>
 
     !trans_api:commit(Th).
@@ -30,6 +35,11 @@
 
     !trans_api:delete(Th, {tab, k1}).
     ???{ok,key_deleted,k1}
+    ???>
+
+    !trans_api:debug(Th).
+    ???[info] Table: tab
+    ???[info]   Key: k2, Value: v2
     ???>
 
     !trans_api:discard(Th).
