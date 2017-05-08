@@ -38,9 +38,9 @@
 -type transaction() :: pid().
 
 %% Delegate creation to the supervisor
--spec create([term()]) -> transaction().
-create(_Options) ->
-    db_trans_sup:create().
+-spec create(map()) -> transaction().
+create(Options) ->
+    db_trans_sup:create(Options).
 
 discard(Th) ->
     try

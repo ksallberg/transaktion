@@ -6,8 +6,12 @@
     ???1>
     ???[info] Application transaktion started
 
+    !Settings = #{ backend => file_backend,
+    !              name    => db1 }.
+    ???>
+
     # Actual test...
-    !{ok, Th} = trans_api:create([read]).
+    !{ok, Th} = trans_api:create(Settings).
     ???[info] New transaction created
     ???>
 

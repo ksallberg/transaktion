@@ -60,9 +60,15 @@ handle_cast(timeout, State) ->
     {stop, normal, State}.
 
 -spec handle_call(any(), {pid(), any()}, state()) -> {stop, tuple(), state()}.
-handle_call({commit, Data}, _From, State) ->
-    lager:log(info, self(), "db_core commit ~p", [Data]),
+handle_call({commit, Tables, #{backend := Backend, name := Name}},
+            _From, State) ->
+    lager:log(info, self(), "db_core commit", []),
+    ok = apply(Backend, store, [#{name => Name, data => Tables}]),
     {reply, commited, State};
+
+handle_call({read, #{backend := Backend, name := Name}}, _From, State) ->
+    Data = apply(Backend, read, [Name]),
+    {reply, Data, State};
 
 handle_call(Request, _From, State) ->
     {stop, {Request, undefined_event}, State}.

@@ -31,7 +31,7 @@
 
 -export([ start_link/0
         , init/1
-        , create/0]).
+        , create/1]).
 
 start_link() ->
     supervisor:start_link( {local, ?MODULE}
@@ -52,5 +52,5 @@ init(_Whatever) ->
                  preiod    => 60},
     {ok, {SupFlags, ChildSpec}}.
 
-create() ->
-    supervisor:start_child(?MODULE, []).
+create(Options) ->
+    supervisor:start_child(?MODULE, [Options]).

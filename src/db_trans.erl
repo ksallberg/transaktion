@@ -29,7 +29,7 @@
 
 -behaviour(gen_server).
 
--export([start_link/0]).
+-export([start_link/1]).
 
 -export([ init/1
         , handle_call/3
@@ -40,7 +40,8 @@
 
 % State while receiving bytes from the tcp socket
 -record(state, { flags        :: integer()
-               , tables = #{} :: map()
+               , tables       :: map()
+               , options      :: map()
                }).
 
 -type state() :: #state{}.
@@ -49,14 +50,15 @@
 
 %% Interface: __________________________________________________________________
 
-start_link() ->
-    gen_server:start_link(?MODULE, [], []).
+start_link(Options) ->
+    gen_server:start_link(?MODULE, Options, []).
 
 %% Gen Serv:  __________________________________________________________________
 
-init(_Whatever) ->
+init(Options) ->
     lager:log(info, self(), "New transaction created", []),
-    {ok, #state{}}.
+    InitialData = gen_server:call(db_core, {read, Options}),
+    {ok, #state{tables = InitialData, options = Options}}.
 
 -spec handle_cast({data, string()} | timeout | {socket_ready, port()}, state())
     -> {stop, normal, state()} | {noreply, state(), infinity}.
@@ -116,8 +118,9 @@ handle_call({read, Tab, Key}, _From, #state{tables = Tables} = State) ->
             {reply, error, State}
     end;
 
-handle_call(commit, _From, #state{tables = Tables} = State) ->
-    CommitResult = gen_server:call(db_core, {commit, Tables}),
+handle_call(commit, _From, #state{tables  = Tables,
+                                  options = Options} = State) ->
+    CommitResult = gen_server:call(db_core, {commit, Tables, Options}),
     {reply, CommitResult, State};
 
 handle_call(Request, _From, State) ->
