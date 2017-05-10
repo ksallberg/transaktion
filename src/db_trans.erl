@@ -23,6 +23,25 @@
 %% ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 %% OF THE POSSIBILITY OF SUCH DAMAGE.
 
+%% db_trans is the representation of a transaction.
+%% it is used to branch out from the central state of db_core.
+%%
+%% +------------+
+%% |  db_trans  |
+%% +------------+
+%%      |
+%%      v
+%% +-----------+
+%% |  db_core  |
+%% +-----------+
+%%
+%% The representation is a map in a map, similar to the representation in
+%% db_core. However, instead of a datavalue, db_trans instead keeps a
+%% transaction operation as the value.
+%% map(key=tablename, value=map(key=keyname, value=trans_operation))
+%%
+%% The trans_operation is either '{set, data}', or 'delete'.
+
 -module(db_trans).
 
 -author('kristian@purestyle.se').
@@ -84,26 +103,12 @@ handle_call(discard, _From, State) ->
     {stop, normal, State};
 
 handle_call({add, Tab, Key, Val}, _From, #state{tables = Tables} = State) ->
-    case maps:find(Tab, Tables) of
-        {ok, Data} ->
-            NewData   = maps:put(Key, Val, Data),
-            NewTables = maps:update(Tab, NewData, Tables),
-            {reply, key_added, State#state{tables = NewTables}};
-        error ->
-            NewData   = maps:put(Key, Val, #{}),
-            NewTables = maps:put(Tab, NewData, Tables),
-            {reply, key_added, State#state{tables = NewTables}}
-    end;
+    NewTables = map_logic:set_data(Tab, {Key, {set, Val}}, Tables),
+    {reply, key_added, State#state{tables = NewTables}};
 
 handle_call({delete, Tab, Key}, _From, #state{tables = Tables} = State) ->
-    case maps:find(Tab, Tables) of
-        {ok, Data} ->
-            NewData   = maps:remove(Key, Data),
-            NewTables = maps:update(Tab, NewData, Tables),
-            {reply, key_deleted, State#state{tables = NewTables}};
-        error ->
-            {reply, error, State}
-    end;
+    NewTables = map_logic:set_data(Tab, {Key, delete}, Tables),
+    {reply, key_deleted, State#state{tables = NewTables}};
 
 handle_call({read, Tab, Key}, _From, #state{tables = Tables} = State) ->
     case maps:find(Tab, Tables) of

@@ -23,6 +23,20 @@
 %% ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 %% OF THE POSSIBILITY OF SUCH DAMAGE.
 
+%% The representation of a database is a map in a map.
+%% Two layers with the structure illustrated below:
+%%
+%% tables
+%%   |
+%%   key/value pairs
+%%
+%% map(key=tablename, value=map(key=keyname, value=data_value))
+%%
+%% db_core translates to this from the representation in db_trans:
+%% map(key=tablename, value=map(key=keyname, value=trans_operation))
+%%
+%% If more levels are required, this can be achieved in the backend.
+
 -module(db_core).
 
 -author('kristian@purestyle.se').
@@ -38,8 +52,7 @@
          code_change/3]).
 
 % State while receiving bytes from the tcp socket
--record(state, { flags         :: integer()
-               }).
+-record(state, { flags :: integer() }).
 
 -type state() :: #state{}.
 
@@ -51,7 +64,7 @@ start_link() ->
 init(_Whatever) ->
     erlang:register(db_core, self()),
     lager:log(info, self(), "db_core running...", []),
-    {ok, #state{}}.
+    {ok, #state{databases = #{}}}.
 
 -spec handle_cast({data, string()} | timeout | {socket_ready, port()}, state())
     -> {stop, normal, state()} | {noreply, state(), infinity}.
@@ -66,8 +79,8 @@ handle_call({commit, Tables, #{backend := Backend, name := Name}},
     ok = apply(Backend, store, [#{name => Name, data => Tables}]),
     {reply, commited, State};
 
-handle_call({read, #{backend := Backend, name := Name}}, _From, State) ->
-    Data = apply(Backend, read, [Name]),
+handle_call({read, #{backend := Backend, name := DbName}}, _From, State) ->
+    Data = apply(Backend, read, [DbName]),
     {reply, Data, State};
 
 handle_call(Request, _From, State) ->
@@ -88,3 +101,13 @@ terminate(_Reason, #state{flags  = _Flags} = _State) ->
 -spec code_change(atom(), state(), any()) -> {ok, state()}.
 code_change(_OldVsn, StateData, _Extra) ->
     {ok, StateData}.
+
+
+
+%% handle_call({delete, Tab, Key}, _From, #state{tables = Tables} = State) ->
+%%     case map_logic:delete_data(Tab, Key, Tables) of
+%%         {ok, NewTables} ->
+%%             {reply, key_deleted, State#state{tables = NewTables}};
+%%         {error, no_such_table} ->
+%%             {reply, error, State}
+%%     end;

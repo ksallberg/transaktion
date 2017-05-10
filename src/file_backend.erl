@@ -4,16 +4,35 @@
 
 -export([store/1, read/1]).
 
-store(#{name := Name, data := Data}) ->
-    Bin = term_to_binary(Data),
-    file:write_file(Name, Bin).
+-define(DB_FILE, db_file).
 
-read(Name) ->
-    case file:read_file(Name) of
+store(#{name := DbName, data := Data}) ->
+    OldDBCollection =
+        case file:read_file(?DB_FILE) of
+            {ok, Bin} ->
+                %% should have better strategy than
+                %% deleting file and writing new
+                ok = file:delete(?DB_FILE),
+                binary_to_term(Bin);
+            {error, _Reason} ->
+                #{}
+        end,
+    NewDBCollection = map_logic:set_data1({DbName, Data}, OldDBCollection),
+    FinalBin = term_to_binary(NewDBCollection),
+    file:write_file(?DB_FILE, FinalBin).
+
+read(DbName) ->
+    case file:read_file(?DB_FILE) of
         {ok, Bin} ->
-            binary_to_term(Bin);
+            DBCollection = binary_to_term(Bin),
+            case maps:find(DbName, DBCollection) of
+                {ok, Tables} ->
+                    Tables;
+                error ->
+                    %% Return inital data structure:
+                    #{}
+            end;
         {error, _Reason} ->
-            file:write_file(Name, <<"">>),
             %% Return inital data structure:
             #{}
     end.
