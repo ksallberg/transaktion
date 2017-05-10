@@ -33,7 +33,8 @@
         , add/2
         , delete/2
         , read/2
-        , debug/1]).
+        , debug/1
+        , debug_merge/1]).
 
 -type transaction() :: pid().
 
@@ -87,3 +88,6 @@ commit(Th) ->
 
 debug(Th) ->
     gen_server:cast(Th, debug).
+
+debug_merge(Th) ->
+    gen_server:cast(Th, debug_dryrun).

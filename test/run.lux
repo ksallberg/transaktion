@@ -20,7 +20,7 @@
     ???>
 
     !trans_api:read(Th, {tab, k1}).
-    ???{ok,value,v1}
+    ???{ok,value,{set,v1}}
     ???>
 
     !trans_api:add(Th, {tab, {k2, v2}}).
@@ -29,8 +29,8 @@
 
     !trans_api:debug(Th).
     ???[info] Table: tab
-    ???[info]   Key: k1, Value: v1
-    ???[info]   Key: k2, Value: v2
+    ???[info]   Key: k1, Value: {set,v1}
+    ???[info]   Key: k2, Value: {set,v2}
     ???>
 
     !trans_api:commit(Th).
@@ -43,15 +43,35 @@
 
     !trans_api:debug(Th).
     ???[info] Table: tab
-    ???[info]   Key: k2, Value: v2
+    ???[info]   Key: k1, Value: delete
+    ???[info]   Key: k2, Value: {set,v2}
+    ???>
+
+    # commit delete
+    !trans_api:commit(Th).
+    ???db_core commit
     ???>
 
     !trans_api:discard(Th).
     ???{ok,transaction_discarded}
     ???>
 
+    !{ok, Th2} = trans_api:create(Settings).
+    ???[info] New transaction created
+    ???>
+
+    # now, only k2 should be visible, not k1
+    !trans_api:debug_merge(Th2).
+    ???[info] Table: tab
+    ???[info]   Key: k2, Value: v2
+
     !q().
     ?SH-PROMPT:
 
     !echo ==$?==
     ?==0==
+    !exit
+    [endshell]
+
+[cleanup]
+    !rm -rf db_file

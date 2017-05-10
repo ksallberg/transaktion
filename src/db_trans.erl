@@ -59,7 +59,7 @@
 
 % State while receiving bytes from the tcp socket
 -record(state, { flags        :: integer()
-               , tables       :: map()
+               , changeset    :: map()
                , options      :: map()
                }).
 
@@ -76,23 +76,19 @@ start_link(Options) ->
 
 init(Options) ->
     lager:log(info, self(), "New transaction created", []),
-    InitialData = gen_server:call(db_core, {read, Options}),
-    {ok, #state{tables = InitialData, options = Options}}.
+    {ok, #state{changeset = #{}, options = Options}}.
 
 -spec handle_cast({data, string()} | timeout | {socket_ready, port()}, state())
     -> {stop, normal, state()} | {noreply, state(), infinity}.
-handle_cast(debug, #state{tables = Tables} = State) ->
-    TablesLs = maps:to_list(Tables),
-    DebugFInner = fun({Key, Value}) ->
-                          lager:log(info, self(),
-                                    "  Key: ~p, Value: ~p", [Key, Value])
-                  end,
-    DebugF = fun({TableName, TableData}) ->
-                     TableDataLs = maps:to_list(TableData),
-                     lager:log(info, self(), "Table: ~p", [TableName]),
-                     lists:foreach(DebugFInner, TableDataLs)
-             end,
-    lists:foreach(DebugF, TablesLs),
+handle_cast(debug, #state{changeset = Tables} = State) ->
+    debug(Tables),
+    {noreply, State};
+
+handle_cast(debug_dryrun, #state{changeset = ChangeSet,
+                                 options = Options} = State) ->
+    BaseTables = gen_server:call(db_core, {read, Options}),
+    Merged = map_logic:merge_into(BaseTables, ChangeSet),
+    debug(Merged),
     {noreply, State};
 
 handle_cast(timeout, State) ->
@@ -102,15 +98,15 @@ handle_cast(timeout, State) ->
 handle_call(discard, _From, State) ->
     {stop, normal, State};
 
-handle_call({add, Tab, Key, Val}, _From, #state{tables = Tables} = State) ->
+handle_call({add, Tab, Key, Val}, _From, #state{changeset = Tables} = State) ->
     NewTables = map_logic:set_data(Tab, {Key, {set, Val}}, Tables),
-    {reply, key_added, State#state{tables = NewTables}};
+    {reply, key_added, State#state{changeset = NewTables}};
 
-handle_call({delete, Tab, Key}, _From, #state{tables = Tables} = State) ->
+handle_call({delete, Tab, Key}, _From, #state{changeset = Tables} = State) ->
     NewTables = map_logic:set_data(Tab, {Key, delete}, Tables),
-    {reply, key_deleted, State#state{tables = NewTables}};
+    {reply, key_deleted, State#state{changeset = NewTables}};
 
-handle_call({read, Tab, Key}, _From, #state{tables = Tables} = State) ->
+handle_call({read, Tab, Key}, _From, #state{changeset = Tables} = State) ->
     case maps:find(Tab, Tables) of
         {ok, Data} ->
             case maps:find(Key, Data) of
@@ -123,8 +119,8 @@ handle_call({read, Tab, Key}, _From, #state{tables = Tables} = State) ->
             {reply, error, State}
     end;
 
-handle_call(commit, _From, #state{tables  = Tables,
-                                  options = Options} = State) ->
+handle_call(commit, _From, #state{changeset = Tables,
+                                  options   = Options} = State) ->
     CommitResult = gen_server:call(db_core, {commit, Tables, Options}),
     {reply, CommitResult, State};
 
@@ -145,3 +141,16 @@ terminate(_Reason, #state{} = _State) ->
 -spec code_change(atom(), state(), any()) -> {ok, state()}.
 code_change(_OldVsn, StateData, _Extra) ->
     {ok, StateData}.
+
+debug(Tables) ->
+    TablesLs = maps:to_list(Tables),
+    DebugFInner = fun({Key, Value}) ->
+                          lager:log(info, self(),
+                                    "  Key: ~p, Value: ~p", [Key, Value])
+                  end,
+    DebugF = fun({TableName, TableData}) ->
+                     TableDataLs = maps:to_list(TableData),
+                     lager:log(info, self(), "Table: ~p", [TableName]),
+                     lists:foreach(DebugFInner, TableDataLs)
+             end,
+    lists:foreach(DebugF, TablesLs).

@@ -64,7 +64,7 @@ start_link() ->
 init(_Whatever) ->
     erlang:register(db_core, self()),
     lager:log(info, self(), "db_core running...", []),
-    {ok, #state{databases = #{}}}.
+    {ok, #state{}}.
 
 -spec handle_cast({data, string()} | timeout | {socket_ready, port()}, state())
     -> {stop, normal, state()} | {noreply, state(), infinity}.
@@ -73,10 +73,16 @@ handle_cast(timeout, State) ->
     {stop, normal, State}.
 
 -spec handle_call(any(), {pid(), any()}, state()) -> {stop, tuple(), state()}.
-handle_call({commit, Tables, #{backend := Backend, name := Name}},
+handle_call({commit, TransTables, #{backend := Backend, name := DbName}},
             _From, State) ->
     lager:log(info, self(), "db_core commit", []),
-    ok = apply(Backend, store, [#{name => Name, data => Tables}]),
+
+    BaseTables = apply(Backend, read, [DbName]),
+    NewTables = map_logic:merge_into(BaseTables, TransTables),
+
+    lager:log(info, self(), "COMITTED DB: ~p", [NewTables]),
+
+    ok = apply(Backend, store, [#{name => DbName, data => NewTables}]),
     {reply, commited, State};
 
 handle_call({read, #{backend := Backend, name := DbName}}, _From, State) ->
@@ -101,8 +107,6 @@ terminate(_Reason, #state{flags  = _Flags} = _State) ->
 -spec code_change(atom(), state(), any()) -> {ok, state()}.
 code_change(_OldVsn, StateData, _Extra) ->
     {ok, StateData}.
-
-
 
 %% handle_call({delete, Tab, Key}, _From, #state{tables = Tables} = State) ->
 %%     case map_logic:delete_data(Tab, Key, Tables) of

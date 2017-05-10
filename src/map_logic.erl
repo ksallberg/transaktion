@@ -4,6 +4,7 @@
         , set_trans_oper/3
         , delete_data/3
         , set_data1/2
+        , merge_into/2
         ]).
 
 set_trans_oper(TableName, {Key, Oper}, Tables) ->
@@ -35,3 +36,30 @@ delete_data(TableName, Key, Tables) ->
         error ->
             {error, no_such_table}
     end.
+
+merge_into(BaseTables, Tables) ->
+    FF = fun(TableName, TransTable, Acc) ->
+                 CurrentBaseTable =
+                     case maps:find(TableName, Acc) of
+                         error ->
+                             #{};
+                         {ok, ExistingTable} ->
+                             ExistingTable
+                     end,
+                 NewBaseTable = do_merge_into(CurrentBaseTable, TransTable),
+                 map_logic:set_data1({TableName, NewBaseTable}, Acc)
+         end,
+    maps:fold(FF, BaseTables, Tables).
+
+do_merge_into(BaseTable, TransTable) ->
+    FF = fun(Key, delete, Acc) ->
+                 case maps:find(Key, Acc) of
+                     error ->
+                         Acc;
+                     {ok, _Val} ->
+                         maps:remove(Key, Acc)
+                 end;
+            (Key, {set, Value}, Acc) ->
+                 map_logic:set_data1({Key, Value}, Acc)
+         end,
+    maps:fold(FF, BaseTable, TransTable).
