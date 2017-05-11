@@ -20,7 +20,7 @@
     ???>
 
     !trans_api:read(Th, {tab, k1}).
-    ???{ok,value,{set,v1}}
+    ???{ok,value,v1}
     ???>
 
     !trans_api:add(Th, {tab, {k2, v2}}).
@@ -64,6 +64,23 @@
     !trans_api:debug_merge(Th2).
     ???[info] Table: tab
     ???[info]   Key: k2, Value: v2
+    # no > here, it can be before since debug is async
+
+    !"get the prompt back".
+    ???get the prompt back
+
+    !trans_api:read(Th2, {tab, k2}).
+    ???{ok,value,v2}
+
+    !trans_api:read(Th2, {tab, k1}).
+    ???{error,not_existing}
+
+    !trans_api:add(Th2, {tab, {k2, v55}}).
+    ???{ok,key_added,k2}
+    ???>
+
+    !trans_api:read(Th2, {tab, k2}).
+    ???{ok,value,v55}
 
     !q().
     ?SH-PROMPT:

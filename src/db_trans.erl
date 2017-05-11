@@ -106,17 +106,15 @@ handle_call({delete, Tab, Key}, _From, #state{changeset = Tables} = State) ->
     NewTables = map_logic:set_data(Tab, {Key, delete}, Tables),
     {reply, key_deleted, State#state{changeset = NewTables}};
 
-handle_call({read, Tab, Key}, _From, #state{changeset = Tables} = State) ->
-    case maps:find(Tab, Tables) of
-        {ok, Data} ->
-            case maps:find(Key, Data) of
-                error ->
-                    {reply, error, State};
-                {ok, Result} ->
-                    {reply, {kv_pair, {Key, Result}}, State}
-            end;
-        error ->
-            {reply, error, State}
+handle_call({read, TableName, Key}, _From,
+            #state{changeset = ChgSet,
+                   options   = Options} = State) ->
+    BaseTables = gen_server:call(db_core, {read, Options}),
+    case map_logic:get_data(TableName, Key, ChgSet, BaseTables) of
+        {error, not_existing} ->
+            {reply, error, State};
+        Result ->
+            {reply, {kv_pair, {Key, Result}}, State}
     end;
 
 handle_call(commit, _From, #state{changeset = Tables,

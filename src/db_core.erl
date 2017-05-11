@@ -107,11 +107,3 @@ terminate(_Reason, #state{flags  = _Flags} = _State) ->
 -spec code_change(atom(), state(), any()) -> {ok, state()}.
 code_change(_OldVsn, StateData, _Extra) ->
     {ok, StateData}.
-
-%% handle_call({delete, Tab, Key}, _From, #state{tables = Tables} = State) ->
-%%     case map_logic:delete_data(Tab, Key, Tables) of
-%%         {ok, NewTables} ->
-%%             {reply, key_deleted, State#state{tables = NewTables}};
-%%         {error, no_such_table} ->
-%%             {reply, error, State}
-%%     end;

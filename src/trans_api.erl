@@ -70,8 +70,8 @@ read(Th, {Table, Key}) ->
     case gen_server:call(Th, {read, Table, Key}) of
         {kv_pair, {_Key, Value}} ->
             {ok, value, Value};
-        Err ->
-            {error, Err}
+        Err when Err == error ->
+            {error, not_existing}
     end.
 
 commit(Th) ->

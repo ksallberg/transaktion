@@ -5,6 +5,7 @@
         , delete_data/3
         , set_data1/2
         , merge_into/2
+        , get_data/4
         ]).
 
 set_trans_oper(TableName, {Key, Oper}, Tables) ->
@@ -26,6 +27,36 @@ set_data(TableName, {Key, Val}, Tables) ->
         error ->
             NewTable = maps:put(Key, Val, #{}),
             maps:put(TableName, NewTable, Tables)
+    end.
+
+%% When reading, first try to find the value from the transaction's
+%% change set. If that is not existing, then look deeper, into the
+%% base that the transactions branches out from.
+get_data(TableName, Key, ChangeSet, Base) ->
+    case get_data(TableName, ChangeSet) of
+        {error, not_existing} ->
+            case get_data(TableName, Base) of
+                {error, not_existing}
+                    ->
+                    {error, not_existing};
+                TableInBase ->
+                    get_data(Key, TableInBase)
+            end;
+        Table ->
+            get_data(Key, Table)
+    end.
+
+get_data(Key, Table) ->
+    case maps:find(Key, Table) of
+        %% Implementation detail, hide 'set' from the api
+        {ok, {set, Value}} ->
+            Value;
+        {ok, delete} ->
+            {error, not_existing};
+        {ok, Value} ->
+            Value;
+        error ->
+            {error, not_existing}
     end.
 
 delete_data(TableName, Key, Tables) ->
