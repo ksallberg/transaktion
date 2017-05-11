@@ -17,7 +17,7 @@ store(#{name := DbName, data := Data}) ->
             {error, _Reason} ->
                 #{}
         end,
-    NewDBCollection = map_logic:set_data1({DbName, Data}, OldDBCollection),
+    NewDBCollection = map_logic:set_data({DbName, Data}, OldDBCollection),
     FinalBin = term_to_binary(NewDBCollection),
     file:write_file(?DB_FILE, FinalBin).
 

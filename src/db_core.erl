@@ -73,17 +73,21 @@ handle_cast(timeout, State) ->
     {stop, normal, State}.
 
 -spec handle_call(any(), {pid(), any()}, state()) -> {stop, tuple(), state()}.
-handle_call({commit, TransTables, #{backend := Backend, name := DbName}},
+handle_call({commit, ChgSet, #{backend := Backend, name := DbName}},
             _From, State) ->
     lager:log(info, self(), "db_core commit", []),
-
     BaseTables = apply(Backend, read, [DbName]),
-    NewTables = map_logic:merge_into(BaseTables, TransTables),
-
-    lager:log(info, self(), "COMITTED DB: ~p", [NewTables]),
-
-    ok = apply(Backend, store, [#{name => DbName, data => NewTables}]),
-    {reply, commited, State};
+    Merged = map_logic:merge_into(BaseTables, ChgSet),
+    case Merged of
+        {error, delete_non_existing} ->
+            ErrorMsg = "Commit failed, attempt to delete non existing value.",
+            lager:log(info, self(), ErrorMsg, []),
+            {reply, commit_failed, State};
+        _ ->
+            lager:log(info, self(), "Committed DB: ~p", [Merged]),
+            ok = apply(Backend, store, [#{name => DbName, data => Merged}]),
+            {reply, commited, State}
+    end;
 
 handle_call({read, #{backend := Backend, name := DbName}}, _From, State) ->
     Data = apply(Backend, read, [DbName]),

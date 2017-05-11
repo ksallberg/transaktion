@@ -78,10 +78,8 @@ commit(Th) ->
     case gen_server:call(Th, commit) of
         commited ->
             {ok, commited};
-        no_op ->
-            {error, no_op};
-        val_error ->
-            {error, val_error};
+        commit_failed ->
+            {error, commit_failed};
         Err ->
             {error, Err}
     end.

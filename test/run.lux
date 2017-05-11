@@ -1,5 +1,10 @@
 [doc Sanity check]
 
+[macro prompt_back]
+    !"get the prompt back".
+    ???get the prompt back
+[endmacro]
+
 [shell cli]
     !make -C ../ start
     ???Eshell
@@ -65,9 +70,7 @@
     ???[info] Table: tab
     ???[info]   Key: k2, Value: v2
     # no > here, it can be before since debug is async
-
-    !"get the prompt back".
-    ???get the prompt back
+    [invoke prompt_back]
 
     !trans_api:read(Th2, {tab, k2}).
     ???{ok,value,v2}
@@ -81,6 +84,57 @@
 
     !trans_api:read(Th2, {tab, k2}).
     ???{ok,value,v55}
+
+    !trans_api:commit(Th2).
+    ???db_core commit
+    ???>
+
+    !trans_api:debug_merge(Th2).
+    ???[info] Table: tab
+    ???[info]   Key: k2, Value: v55
+    [invoke prompt_back]
+
+    !trans_api:add(Th2, {tabx, {somekey, "ojoj!"}}).
+    ???>
+
+    !trans_api:debug_merge(Th2).
+    ???[info] Table: tab
+    ???[info]   Key: k2, Value: v55
+    ???[info] Table: tabx
+    ???[info]   Key: somekey, Value: "ojoj!"
+    [invoke prompt_back]
+
+    !trans_api:commit(Th2).
+    ???db_core commit
+    ???>
+
+    # Now delete a non existing value, this should
+    # be OK to do, but not OK to commit.
+
+    !trans_api:delete(Th2, {tab, <<"NON EXISTING KEY">>}).
+    ???{ok,key_deleted,<<"NON EXISTING KEY">>}
+    ???>
+
+    !trans_api:commit(Th2).
+    ???Commit failed, attempt to delete non existing value.
+    ???>
+
+    !trans_api:discard(Th2).
+    ???{ok,transaction_discarded}
+    ???>
+
+    !{ok, Th3} = trans_api:create(Settings).
+    ???[info] New transaction created
+    ???>
+
+    # try to delete a non existing value in a non existing table.
+    !trans_api:delete(Th3, {tabadw, <<"NON EXISTING KEY">>}).
+    ???{ok,key_deleted,<<"NON EXISTING KEY">>}
+    ???>
+
+    !trans_api:commit(Th3).
+    ???Commit failed, attempt to delete non existing value.
+    ???>
 
     !q().
     ?SH-PROMPT:

@@ -1,9 +1,8 @@
 -module(map_logic).
 
--export([ set_data/3
+-export([ set_data/2
+        , set_data/3
         , set_trans_oper/3
-        , delete_data/3
-        , set_data1/2
         , merge_into/2
         , get_data/4
         ]).
@@ -11,7 +10,7 @@
 set_trans_oper(TableName, {Key, Oper}, Tables) ->
     set_data(TableName, {Key, Oper}, Tables).
 
-set_data1({Key, Val}, Map) ->
+set_data({Key, Val}, Map) ->
     case maps:find(Key, Map) of
         {ok, _OldData} ->
             maps:update(Key, Val, Map);
@@ -59,16 +58,15 @@ get_data(Key, Table) ->
             {error, not_existing}
     end.
 
-delete_data(TableName, Key, Tables) ->
-    case maps:find(TableName, Tables) of
-        {ok, Table} ->
-            NewTable  = maps:remove(Key, Table),
-            maps:update(TableName, NewTable, Tables);
-        error ->
-            {error, no_such_table}
+merge_into(BaseTables, Tables) ->
+    try
+        merge_into1(BaseTables, Tables)
+    catch
+        throw:{error, delete_non_existing} ->
+            {error, delete_non_existing}
     end.
 
-merge_into(BaseTables, Tables) ->
+merge_into1(BaseTables, Tables) ->
     FF = fun(TableName, TransTable, Acc) ->
                  CurrentBaseTable =
                      case maps:find(TableName, Acc) of
@@ -77,20 +75,20 @@ merge_into(BaseTables, Tables) ->
                          {ok, ExistingTable} ->
                              ExistingTable
                      end,
-                 NewBaseTable = do_merge_into(CurrentBaseTable, TransTable),
-                 map_logic:set_data1({TableName, NewBaseTable}, Acc)
+                 NewBaseTable = merge_into2(CurrentBaseTable, TransTable),
+                 set_data({TableName, NewBaseTable}, Acc)
          end,
     maps:fold(FF, BaseTables, Tables).
 
-do_merge_into(BaseTable, TransTable) ->
+merge_into2(BaseTable, TransTable) ->
     FF = fun(Key, delete, Acc) ->
                  case maps:find(Key, Acc) of
                      error ->
-                         Acc;
+                         throw({error, delete_non_existing});
                      {ok, _Val} ->
                          maps:remove(Key, Acc)
                  end;
             (Key, {set, Value}, Acc) ->
-                 map_logic:set_data1({Key, Value}, Acc)
+                 set_data({Key, Value}, Acc)
          end,
     maps:fold(FF, BaseTable, TransTable).
