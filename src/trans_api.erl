@@ -36,6 +36,9 @@
         , debug/1
         , debug_merge/1]).
 
+-export([ join/1
+        , debug_other_nodes/0]).
+
 -type transaction() :: pid().
 
 %% Delegate creation to the supervisor
@@ -89,3 +92,22 @@ debug(Th) ->
 
 debug_merge(Th) ->
     gen_server:cast(Th, debug_dryrun).
+
+%% Distribution
+
+join(Node) ->
+    Res = net_adm:ping(Node),
+    case Res of
+        pong ->
+            Nodes = nodes(),
+            io:format("Initially seen: ~B~n", [length(Nodes)]);
+        pang ->
+            io:format("Error, could not connect to ~p. ~n", [Node])
+    end,
+    ok.
+
+%% sort to make testing easier
+debug_other_nodes() ->
+    Nodes = lists:sort(nodes()),
+    io:format("Len Of Nodes: ~B~n", [length(Nodes)]),
+    io:format("Other Nodes: ~p~n", [Nodes]).

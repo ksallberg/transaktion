@@ -1,0 +1,98 @@
+[doc Cluster test, connect nodes to a cluster]
+
+[global hostname=signhild]
+
+[macro prompt_back]
+    !"get the prompt back".
+    ???get the prompt back
+[endmacro]
+
+# test initialization phase
+
+[shell node1]
+    -Error
+    !TR_TEST_ID=1 make -C ../ start_node
+    ???Eshell
+    ???1>
+    ???[info] Application transaktion started
+
+    !node().
+    ?tr_test1@$hostname
+
+    !nodes().
+    ???[]
+
+[shell node2]
+    -Error
+    !TR_TEST_ID=2 make -C ../ start_node
+    ???Eshell
+    ???1>
+    ???[info] Application transaktion started
+
+    !node().
+    ???tr_test2@
+
+    !trans_api:join('tr_test1@$hostname').
+    ???Initially seen: 1
+
+    [sleep 1]
+
+    !trans_api:debug_other_nodes().
+    ???Len Of Nodes: 1
+    ?Other Nodes: \[tr_test1@$hostname\]
+    ???ok
+
+[shell node3]
+    -Error
+    !TR_TEST_ID=3 make -C ../ start_node
+    ???Eshell
+    ???1>
+    ???[info] Application transaktion started
+
+    !node().
+    ???tr_test3@
+
+    !trans_api:join('tr_test2@$hostname').
+    ???Initially seen: 1
+
+    [sleep 1]
+
+    !trans_api:debug_other_nodes().
+    ???Len Of Nodes: 2
+    ???Other Nodes:
+    ?tr_test1@$hostname
+    ?tr_test2@$hostname
+    ???ok
+
+# test teardown phase
+[shell node1]
+    !q().
+    ?SH-PROMPT:
+
+    !echo ==$?==
+    ?==0==
+    !exit
+    [endshell]
+
+[shell node2]
+    !q().
+    ?SH-PROMPT:
+
+    !echo ==$?==
+    ?==0==
+    !exit
+    [endshell]
+
+[shell node3]
+    !q().
+    ?SH-PROMPT:
+
+    !echo ==$?==
+    ?==0==
+    !exit
+    [endshell]
+
+[cleanup]
+    !rm -rf db_file1
+    !rm -rf db_file2
+    !rm -rf db_file3
