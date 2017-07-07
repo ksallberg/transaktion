@@ -1,6 +1,6 @@
 [doc Cluster test, connect nodes to a cluster]
 
-[global hostname=signhild]
+[config require=HOSTNAME]
 
 [macro prompt_back]
     !"get the prompt back".
@@ -8,7 +8,6 @@
 [endmacro]
 
 # test initialization phase
-
 [shell node1]
     -Error
     !TR_TEST_ID=1 make -C ../ start_node
@@ -17,7 +16,7 @@
     ???[info] Application transaktion started
 
     !node().
-    ?tr_test1@$hostname
+    ?tr_test1@$HOSTNAME
 
     !nodes().
     ???[]
@@ -32,14 +31,15 @@
     !node().
     ???tr_test2@
 
-    !trans_api:join('tr_test1@$hostname').
+    !trans_api:join('tr_test1@$HOSTNAME').
     ???Initially seen: 1
 
     [sleep 1]
 
     !trans_api:debug_other_nodes().
     ???Len Of Nodes: 1
-    ?Other Nodes: \[tr_test1@$hostname\]
+    ???Other Nodes:
+    ?tr_test1@$HOSTNAME
     ???ok
 
 [shell node3]
@@ -52,7 +52,7 @@
     !node().
     ???tr_test3@
 
-    !trans_api:join('tr_test2@$hostname').
+    !trans_api:join('tr_test2@$HOSTNAME').
     ???Initially seen: 1
 
     [sleep 1]
@@ -60,8 +60,8 @@
     !trans_api:debug_other_nodes().
     ???Len Of Nodes: 2
     ???Other Nodes:
-    ?tr_test1@$hostname
-    ?tr_test2@$hostname
+    ?tr_test1@$HOSTNAME
+    ?tr_test2@$HOSTNAME
     ???ok
 
 # test teardown phase

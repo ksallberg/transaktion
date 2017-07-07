@@ -30,5 +30,5 @@ dialyzer:
 .PHONY: dialyzer
 
 test: build
-	lux test/
+	HOSTNAME=`hostname` lux test/
 .PHONY: test
