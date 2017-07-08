@@ -2,27 +2,28 @@
 
 -behaviour(db_backend).
 
--export([store/1, read/1]).
+-export([store/2, read/1]).
 
 -define(DB_FILE, db_file).
 
-store(#{name := DbName, data := Data}) ->
+store(#{name := DbName, data := Data} = _StoreInfo,
+      #{disk_name := DiskFileName} = _Options) ->
     OldDBCollection =
-        case file:read_file(?DB_FILE) of
+        case file:read_file(DiskFileName) of
             {ok, Bin} ->
                 %% should have better strategy than
                 %% deleting file and writing new
-                ok = file:delete(?DB_FILE),
+                ok = file:delete(DiskFileName),
                 binary_to_term(Bin);
             {error, _Reason} ->
                 #{}
         end,
     NewDBCollection = map_logic:set_data({DbName, Data}, OldDBCollection),
     FinalBin = term_to_binary(NewDBCollection),
-    file:write_file(?DB_FILE, FinalBin).
+    file:write_file(DiskFileName, FinalBin).
 
-read(DbName) ->
-    case file:read_file(?DB_FILE) of
+read(#{name := DbName, disk_name := DiskFileName}) ->
+    case file:read_file(DiskFileName) of
         {ok, Bin} ->
             DBCollection = binary_to_term(Bin),
             case maps:find(DbName, DBCollection) of

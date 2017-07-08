@@ -27,5 +27,5 @@
 
 -author('kristian@purestyle.se').
 
--callback store(term()) -> ok | {error, string()}.
+-callback store(term(), map()) -> ok | {error, string()}.
 -callback read(map()) -> term() | {error, string()}.

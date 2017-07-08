@@ -11,4 +11,5 @@ rel/example_project
 _build
 log
 *~
-db_file
+*.db
+lux_logs

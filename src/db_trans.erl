@@ -57,7 +57,6 @@
         , terminate/2
         , code_change/3]).
 
-% State while receiving bytes from the tcp socket
 -record(state, { flags        :: integer()
                , changeset    :: map()
                , options      :: map()

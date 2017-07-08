@@ -11,8 +11,9 @@
     ???1>
     ???[info] Application transaktion started
 
-    !Settings = #{ backend => file_backend,
-    !              name    => db1 }.
+    !Settings = #{ backend   => file_backend,
+    !              name      => db1,
+    !              disk_name => 'db1.db' }.
     ???>
 
     # Actual test...

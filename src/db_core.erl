@@ -73,10 +73,10 @@ handle_cast(timeout, State) ->
     {stop, normal, State}.
 
 -spec handle_call(any(), {pid(), any()}, state()) -> {stop, tuple(), state()}.
-handle_call({commit, ChgSet, #{backend := Backend, name := DbName}},
+handle_call({commit, ChgSet, #{backend := Backend, name := DbName} = Options},
             _From, State) ->
     lager:log(info, self(), "db_core commit", []),
-    BaseTables = apply(Backend, read, [DbName]),
+    BaseTables = apply(Backend, read, [Options]),
     Merged = map_logic:merge_into(BaseTables, ChgSet),
     case Merged of
         {error, delete_non_existing} ->
@@ -85,12 +85,14 @@ handle_call({commit, ChgSet, #{backend := Backend, name := DbName}},
             {reply, commit_failed, State};
         _ ->
             lager:log(info, self(), "Committed DB: ~p", [Merged]),
-            ok = apply(Backend, store, [#{name => DbName, data => Merged}]),
+            Params = [#{name => DbName, data => Merged}, Options],
+            ok = apply(Backend, store, Params),
             {reply, commited, State}
     end;
 
-handle_call({read, #{backend := Backend, name := DbName}}, _From, State) ->
-    Data = apply(Backend, read, [DbName]),
+handle_call({read, #{backend := Backend} = Options},
+            _From, State) ->
+    Data = apply(Backend, read, [Options]),
     {reply, Data, State};
 
 handle_call(Request, _From, State) ->
