@@ -7,29 +7,27 @@
     ???get the prompt back
 [endmacro]
 
-# test initialization phase
-[shell node1]
-    -Error
-    !TR_TEST_ID=1 make -C ../ start_node
+[macro start_node id]
+    !TR_TEST_ID=$id make -C ../ start_node
     ???Eshell
     ???1>
     ???[info] Application transaktion started
 
     !node().
-    ?tr_test1@$HOSTNAME
+    ?tr_test$id@$HOSTNAME
+[endmacro]
+
+# test initialization phase
+[shell node1]
+    -Error
+    [invoke start_node 1]
 
     !nodes().
     ???[]
 
 [shell node2]
     -Error
-    !TR_TEST_ID=2 make -C ../ start_node
-    ???Eshell
-    ???1>
-    ???[info] Application transaktion started
-
-    !node().
-    ???tr_test2@
+    [invoke start_node 2]
 
     !trans_api:join('tr_test1@$HOSTNAME').
     ???Initially seen: 1
@@ -44,13 +42,7 @@
 
 [shell node3]
     -Error
-    !TR_TEST_ID=3 make -C ../ start_node
-    ???Eshell
-    ???1>
-    ???[info] Application transaktion started
-
-    !node().
-    ???tr_test3@
+    [invoke start_node 3]
 
     !trans_api:join('tr_test2@$HOSTNAME').
     ???Initially seen: 1
@@ -64,7 +56,81 @@
     ?tr_test2@$HOSTNAME
     ???ok
 
-# test teardown phase
+[shell node4]
+    -Error
+    [invoke start_node 4]
+
+    !trans_api:join('tr_test1@$HOSTNAME').
+    ???Initially seen: 1
+
+    [sleep 1]
+
+    !trans_api:debug_other_nodes().
+    ???Len Of Nodes: 3
+    ???Other Nodes:
+    ?tr_test1@$HOSTNAME
+    ?tr_test2@$HOSTNAME
+    ?tr_test3@$HOSTNAME
+    ???ok
+
+[shell node5]
+    -Error
+    [invoke start_node 5]
+
+    !trans_api:join('tr_test1@$HOSTNAME').
+    ???Initially seen: 1
+
+    [sleep 1]
+
+    !trans_api:debug_other_nodes().
+    ???Len Of Nodes: 4
+    ???Other Nodes:
+    ?tr_test1@$HOSTNAME
+    ?tr_test2@$HOSTNAME
+    ?tr_test3@$HOSTNAME
+    ?tr_test4@$HOSTNAME
+    ???ok
+
+[shell node6]
+    -Error
+    [invoke start_node 6]
+
+    !trans_api:join('tr_test1@$HOSTNAME').
+    ???Initially seen: 1
+
+    [sleep 1]
+
+    !trans_api:debug_other_nodes().
+    ???Len Of Nodes: 5
+    ???Other Nodes:
+    ?tr_test1@$HOSTNAME
+    ?tr_test2@$HOSTNAME
+    ?tr_test3@$HOSTNAME
+    ?tr_test4@$HOSTNAME
+    ?tr_test5@$HOSTNAME
+    ???ok
+
+[shell node7]
+    -Error
+    [invoke start_node 7]
+
+    !trans_api:join('tr_test1@$HOSTNAME').
+    ???Initially seen: 1
+
+    [sleep 1]
+
+    !trans_api:debug_other_nodes().
+    ???Len Of Nodes: 6
+    ???Other Nodes:
+    ?tr_test1@$HOSTNAME
+    ?tr_test2@$HOSTNAME
+    ?tr_test3@$HOSTNAME
+    ?tr_test4@$HOSTNAME
+    ?tr_test5@$HOSTNAME
+    ?tr_test6@$HOSTNAME
+    ???ok
+
+# teardown phase
 [shell node1]
     !q().
     ?SH-PROMPT:
@@ -92,7 +158,54 @@
     !exit
     [endshell]
 
+[shell node4]
+    !q().
+    ?SH-PROMPT:
+
+    !echo ==$?==
+    ?==0==
+    !exit
+    [endshell]
+
+[shell node5]
+    !q().
+    ?SH-PROMPT:
+
+    !echo ==$?==
+    ?==0==
+    !exit
+    [endshell]
+
+[shell node6]
+    !q().
+    ?SH-PROMPT:
+
+    !echo ==$?==
+    ?==0==
+    !exit
+    [endshell]
+
+[shell node7]
+    !q().
+    ?SH-PROMPT:
+
+    !echo ==$?==
+    ?==0==
+    !exit
+    [endshell]
+
 [cleanup]
     !rm -rf db_file1
+    ?SH-PROMPT:
     !rm -rf db_file2
+    ?SH-PROMPT:
     !rm -rf db_file3
+    ?SH-PROMPT:
+    !rm -rf db_file4
+    ?SH-PROMPT:
+    !rm -rf db_file5
+    ?SH-PROMPT:
+    !rm -rf db_file6
+    ?SH-PROMPT:
+    !rm -rf db_file7
+    ?SH-PROMPT:
