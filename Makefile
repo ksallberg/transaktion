@@ -20,6 +20,7 @@ clean:
 	rm -f priv/*.beam
 	rm -rf lux_logs
 	rm -rf log/*.log
+	rm -rf *.db
 .PHONY: clean
 
 # if no plt file:
