@@ -1,0 +1,91 @@
+[doc Test that one disk file can contain several DBs]
+
+[shell cli]
+    !make -C ../ start
+    ???Eshell
+    ???1>
+    ???[info] Application transaktion started
+
+    # Create one db and set a value in a table
+    !Settings = #{ backend   => file_backend,
+    !              name      => dbX,
+    !              disk_name => 'multi.db' }.
+    ???>
+
+    !{ok, Th} = trans_api:create(Settings).
+    ???[info] New transaction created
+    ???>
+
+    !trans_api:add(Th, {tab, {k1, v1}}).
+    ???{ok,key_added,k1}
+    ???>
+
+    !trans_api:commit(Th).
+    ???db_core commit
+    ???>
+
+    !trans_api:debug_merge(Th).
+    ???[info] Table: tab
+    ???[info]   Key: k1, Value: v1
+
+    !checkpoint.
+    ???checkpoint
+
+    # Create a second db and set another value in the same table name
+    !Settings2 = #{ backend   => file_backend,
+    !               name      => dbY,
+    !               disk_name => 'multi.db' }.
+    ???>
+
+    !{ok, Th2} = trans_api:create(Settings).
+    ???[info] New transaction created
+    ???>
+
+    !trans_api:add(Th2, {tab, {k1, v2}}).
+    ???{ok,key_added,k1}
+    ???>
+
+    !trans_api:commit(Th2).
+    ???db_core commit
+    ???>
+
+    !trans_api:debug_merge(Th2).
+    ???[info] Table: tab
+    ???[info]   Key: k1, Value: v2
+    !checkpoint.
+    ???checkpoint
+
+    # Now, create an empty trans towards the first db
+    !{ok, Th3} = trans_api:create(Settings).
+    ???[info] New transaction created
+    ???>
+
+    # And assert that we get value v1
+    !trans_api:debug_merge(Th3).
+    ???[info] Table: tab
+    ???[info]   Key: k1, Value: v1
+    !checkpoint.
+    ???checkpoint
+
+    # Create an empty trans towards the second db
+    !{ok, Th4} = trans_api:create(Settings2).
+    ???[info] New transaction created
+    ???>
+
+    # And assert that we get value v2
+    !trans_api:debug_merge(Th4).
+    ???[info] Table: tab
+    ???[info]   Key: k1, Value: v2
+    !checkpoint.
+    ???checkpoint
+
+    !q().
+    ?SH-PROMPT:
+
+    !echo ==$?==
+    ?==0==
+    !exit
+    [endshell]
+
+[cleanup]
+    # !rm -rf multi.db

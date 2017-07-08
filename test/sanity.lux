@@ -146,4 +146,4 @@
     [endshell]
 
 [cleanup]
-    !rm -rf db_file
+    !rm -rf db1.db

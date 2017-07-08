@@ -1,3 +1,6 @@
+%% Sample file structure
+%% #{dbX => #{tab => #{k1 => v2}}}
+
 -module(file_backend).
 
 -behaviour(db_backend).
