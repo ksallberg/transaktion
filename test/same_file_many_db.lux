@@ -81,10 +81,9 @@
 
     # Little bit of white box testing, to assert that
     # several DBs are stored in the same disk file
-    !{ok, FileBin} = file:read_file('multi.db'),
-    !binary_to_term(FileBin),
-    ???#{dbX => #{tab => #{k1 => v1},tabx => #{k1 => v2}},dbY => #{tab => #{k1 => v2},tabx => #{k1 => v2}}}
-
+    !{ok, FileBin} = file:read_file('multi.db').
+    !binary_to_term(FileBin).
+    ???#{dbX => #{tab => #{k1 => v1}},dbY => #{tab => #{k1 => v2}}}
     !q().
     ?SH-PROMPT:
 

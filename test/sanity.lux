@@ -13,7 +13,7 @@
 
     !Settings = #{ backend   => file_backend,
     !              name      => db1,
-    !              disk_name => 'db1.db' }.
+    !              disk_name => 'db_sanity.db' }.
     ???>
 
     # Actual test...
@@ -146,4 +146,4 @@
     [endshell]
 
 [cleanup]
-    !rm -rf db1.db
+    !rm -rf db_sanity.db
