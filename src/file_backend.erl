@@ -10,7 +10,7 @@
 -define(DB_FILE, db_file).
 
 store(#{name := DbName, data := Data} = _StoreInfo,
-      #{disk_name := DiskFileName} = _Options) ->
+      #{disk_name := DiskFileName}    = _Options) ->
     OldDBCollection =
         case file:read_file(DiskFileName) of
             {ok, Bin} ->
@@ -25,6 +25,7 @@ store(#{name := DbName, data := Data} = _StoreInfo,
     FinalBin = term_to_binary(NewDBCollection),
     file:write_file(DiskFileName, FinalBin).
 
+%% Returns only the tables of a given DB
 read(#{name := DbName, disk_name := DiskFileName}) ->
     case file:read_file(DiskFileName) of
         {ok, Bin} ->
