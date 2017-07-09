@@ -95,6 +95,10 @@ handle_call({read, #{backend := Backend} = Options},
     Data = apply(Backend, read, [Options]),
     {reply, Data, State};
 
+handle_call({debug, Node}, _From, State) ->
+    lager:log(info, self(), "Debug message from peer: ~p~n", [Node]),
+    {reply, ok, State};
+
 handle_call(Request, _From, State) ->
     {stop, {Request, undefined_event}, State}.
 

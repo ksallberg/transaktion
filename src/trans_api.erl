@@ -34,7 +34,8 @@
         , delete/2
         , read/2
         , debug/1
-        , debug_merge/1]).
+        , debug_merge/1
+        , multi_call/1 ]).
 
 -export([ join/1
         , debug_other_nodes/0]).
@@ -93,7 +94,9 @@ debug(Th) ->
 debug_merge(Th) ->
     gen_server:cast(Th, debug_dryrun).
 
-%% Distribution
+%%%%%%%%%%%%%%%%%%
+%% Distribution %%
+%%%%%%%%%%%%%%%%%%
 
 join(Node) ->
     Res = net_adm:ping(Node),
@@ -105,6 +108,9 @@ join(Node) ->
             io:format("Error, could not connect to ~p. ~n", [Node])
     end,
     ok.
+
+multi_call(Msg) ->
+    gen_server:multi_call(nodes(), db_core, Msg).
 
 %% sort to make testing easier
 debug_other_nodes() ->

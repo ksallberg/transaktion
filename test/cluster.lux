@@ -130,6 +130,30 @@
     ?tr_test6@$HOSTNAME
     ???ok
 
+# send a message from node 1 to all other
+[shell node1]
+    !trans_api:multi_call({debug, node1}).
+    ???>
+
+# check that the message appeared at the other nodes
+[shell node2]
+    ???Debug message from peer: node1
+
+[shell node3]
+    ???Debug message from peer: node1
+
+[shell node4]
+    ???Debug message from peer: node1
+
+[shell node5]
+    ???Debug message from peer: node1
+
+[shell node6]
+    ???Debug message from peer: node1
+
+[shell node7]
+    ???Debug message from peer: node1
+
 # teardown phase
 [shell node1]
     !q().
