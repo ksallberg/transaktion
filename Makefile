@@ -3,14 +3,15 @@ build:
 
 start: build
 	erl -boot start_sasl -pa _build/default/lib/*/ebin \
-            -pa priv -eval "application:start(transaktion)"
+            -eval "application:start(transaktion)." -config priv/app.config
 
 # Start a node, but with a certain sname
 # TR_TEST_ID=1 make start_node
 start_node: build
 	erl -sname tr_test$(TR_TEST_ID) -setcookie dough \
             -pa _build/default/lib/*/ebin \
-            -pa priv -eval "application:start(transaktion)"
+            -pa priv -eval "application:start(transaktion)." \
+            -config priv/app.config
 
 .PHONY: start start_node
 
