@@ -33,4 +33,9 @@ dialyzer:
 
 test: build
 	HOSTNAME=`hostname` lux test/
+	rebar3 proper
 .PHONY: test
+
+proper:
+	rebar3 proper
+.PHONY: proper
