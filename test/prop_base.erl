@@ -28,7 +28,6 @@ prop_set_data() ->
             begin
                 Map = map_logic:set_data({Key, Val}, #{}),
                 Val2 = maps:get(Key, Map),
-                io:format("hej ~p ~p ~n", [Val, Val2]),
                 Val =:= Val2
             end).
 
