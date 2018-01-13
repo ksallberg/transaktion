@@ -45,22 +45,21 @@ prop_sanity() ->
 
 %% The map_logic:merge_into concept is critical in that it applies
 %% a change set into the currently existing data.
-prop_merge_into() ->
-    ?FORALL(TableLs, table(),
+prop_tables_remain() ->
+    ?FORALL({BaseDB, Trans}, {base_db(), changeset()},
             begin
-                TableCont = [ {TabName, maps:from_list(Content)}
-                              || {TabName, Content} <- TableLs],
-                Table = maps:from_list(TableCont),
-                is_map(Table)
+                BaseDBMap = produce_map(BaseDB),
+                TransMap  = produce_map(Trans),
+                is_map(BaseDBMap) andalso is_map(TransMap)
             end).
 
 %%%%%%%%%%%%%%%
 %%% Helpers %%%
 %%%%%%%%%%%%%%%
-is_transaktion_map(#{table1:=T}) ->
-    T == #{};
-is_transaktion_map(#{}) ->
-    true.
+produce_map(DB) ->
+    TableCont = [ {TabName, maps:from_list(Content)}
+                  || {TabName, Content} <- DB],
+    maps:from_list(TableCont).
 
 %%%%%%%%%%%%%%%%%%
 %%% Generators %%%
@@ -71,21 +70,30 @@ is_transaktion_map(#{}) ->
 table_name() ->
     ?SUCHTHAT(N, atom(), N /= '').
 
+text_like() ->
+    list(frequency([{80, range($a, $z)},
+                    {10, $\s},
+                    {1,  $\n},
+                    {1, oneof([$., $-, $!, $?, $,])},
+                    {1, range($0, $9)}
+                   ])).
+
 %% stolen from http://propertesting.com/book_custom_generators.html
 %%
 %% modified so that a tuple {set, "some text"} will be returned
-text_like() ->
-    {set, list(frequency([{80, range($a, $z)},
-                          {10, $\s},
-                          {1,  $\n},
-                          {1, oneof([$., $-, $!, $?, $,])},
-                          {1, range($0, $9)}
-                         ]))}.
+trans_table() ->
+    {set, text_like()}.
 
 %% Use a generator of proplists to later use these
 %% and convert them into maps.
-table() ->
-    list({table_name(), sub_table()}).
+base_db() ->
+    list({table_name(), base_db_sub()}).
 
-sub_table() ->
+base_db_sub() ->
     list({table_name(), text_like()}).
+
+changeset() ->
+    list({table_name(), changeset_sub()}).
+
+changeset_sub() ->
+    list({table_name(), trans_table()}).
