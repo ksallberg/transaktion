@@ -26,7 +26,7 @@ prop_set_data() ->
             end).
 
 prop_sanity() ->
-    ?FORALL({Key, Val, TableName}, {string(), term(), table_name()},
+    ?FORALL({Key, Val, TableName}, {string(), text_like(), table_name()},
             begin
                 application:start(transaktion),
                 Settings = #{backend => file_backend,
@@ -54,3 +54,12 @@ prop_sanity() ->
 %% that is not the empty atom ''.
 table_name() ->
     ?SUCHTHAT(N, atom(), N /= '').
+
+%% stolen from http://propertesting.com/book_custom_generators.html
+text_like() ->
+    list(frequency([{80, range($a, $z)},
+                    {10, $\s},
+                    {1,  $\n},
+                    {1, oneof([$., $-, $!, $?, $,])},
+                    {1, range($0, $9)}
+                   ])).
