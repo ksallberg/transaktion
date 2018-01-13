@@ -41,10 +41,24 @@ prop_sanity() ->
                 Key == KeyReturn andalso Val == ValReturn
             end).
 
+%% The map_logic:merge_into concept is critical in that it applies
+%% a change set into the currently existing data.
+prop_merge_into() ->
+    ?FORALL(TableLs, table(),
+            begin
+                TableCont = [ {TabName, maps:from_list(Content)}
+                              || {TabName, Content} <- TableLs],
+                Table = maps:from_list(TableCont),
+                is_map(Table)
+            end).
+
 %%%%%%%%%%%%%%%
 %%% Helpers %%%
 %%%%%%%%%%%%%%%
-
+is_transaktion_map(#{table1:=T}) ->
+    T == #{};
+is_transaktion_map(#{}) ->
+    true.
 
 %%%%%%%%%%%%%%%%%%
 %%% Generators %%%
@@ -63,3 +77,11 @@ text_like() ->
                     {1, oneof([$., $-, $!, $?, $,])},
                     {1, range($0, $9)}
                    ])).
+
+%% Use a generator of proplists to later use these
+%% and convert them into maps.
+table() ->
+    list({table_name(), sub_table()}).
+
+sub_table() ->
+    list({table_name(), text_like()}).
