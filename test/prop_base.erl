@@ -48,9 +48,14 @@ prop_sanity() ->
 prop_tables_remain() ->
     ?FORALL({BaseDB, Trans}, {base_db(), changeset()},
             begin
-                BaseDBMap = produce_map(BaseDB),
-                TransMap  = produce_map(Trans),
-                is_map(BaseDBMap) andalso is_map(TransMap)
+                BaseDBMap  = produce_map(BaseDB),
+                TransMap   = produce_map(Trans),
+                BaseDBKeys = maps:keys(BaseDBMap),
+                TransKeys  = maps:keys(TransMap),
+                Merged     = map_logic:merge_into(BaseDBMap, TransMap),
+                AfterKeys  = lists:usort(maps:keys(Merged)),
+                BeforeKeys = lists:usort(BaseDBKeys ++ TransKeys),
+                BeforeKeys == AfterKeys
             end).
 
 %%%%%%%%%%%%%%%
