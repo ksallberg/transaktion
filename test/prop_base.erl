@@ -10,6 +10,8 @@
 %% make start
 %% > proper_gen:pick(proper_types:string()).
 %% > proper_gen:pick(prop_base:table_name()).
+%% > proper_gen:pick(prop_base:table()).
+
 
 -compile(export_all).
 
@@ -70,13 +72,15 @@ table_name() ->
     ?SUCHTHAT(N, atom(), N /= '').
 
 %% stolen from http://propertesting.com/book_custom_generators.html
+%%
+%% modified so that a tuple {set, "some text"} will be returned
 text_like() ->
-    list(frequency([{80, range($a, $z)},
-                    {10, $\s},
-                    {1,  $\n},
-                    {1, oneof([$., $-, $!, $?, $,])},
-                    {1, range($0, $9)}
-                   ])).
+    {set, list(frequency([{80, range($a, $z)},
+                          {10, $\s},
+                          {1,  $\n},
+                          {1, oneof([$., $-, $!, $?, $,])},
+                          {1, range($0, $9)}
+                         ]))}.
 
 %% Use a generator of proplists to later use these
 %% and convert them into maps.
