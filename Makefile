@@ -3,6 +3,8 @@ build:
 
 start: build
 	erl -boot start_sasl -pa _build/default/lib/*/ebin \
+            -pa _build/test/lib/transaktion/test \
+            -pa _build/test/lib/proper/ebin \
             -eval "application:start(transaktion)." -config priv/app.config
 
 # Start a node, but with a certain sname

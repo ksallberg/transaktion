@@ -1,4 +1,5 @@
--module(prop_base).
+ -module(prop_base).
+
 -include_lib("proper/include/proper.hrl").
 
 %% rebar3 proper
@@ -8,36 +9,48 @@
 
 %% make start
 %% > proper_gen:pick(proper_types:string()).
-%% > proper_gen:pick(prop_base:wordy_string()).
-%% > proper_gen:pick(prop_base:word()).
+%% > proper_gen:pick(prop_base:table_name()).
 
 -compile(export_all).
 
 %%%%%%%%%%%%%%%%%%
 %%% Properties %%%
 %%%%%%%%%%%%%%%%%%
-prop_test() ->
-    ?FORALL(Type, term(),
-            begin
-                boolean(Type)
-            end).
-
 %% What you insert with map_logic will be the same you get back.
 prop_set_data() ->
     ?FORALL({Key, Val}, {term(), term()},
             begin
                 Map = map_logic:set_data({Key, Val}, #{}),
-                Val2 = maps:get(Key, Map),
-                Val =:= Val2
+                ValReturn = maps:get(Key, Map),
+                Val =:= ValReturn
+            end).
+
+prop_sanity() ->
+    ?FORALL({Key, Val, TableName}, {string(), term(), table_name()},
+            begin
+                application:start(transaktion),
+                Settings = #{backend => file_backend,
+                             name => dbx,
+                             disk_name => 'test.db'},
+                {ok, Th} = trans_api:create(Settings),
+                {ok, key_added, KeyReturn} =
+                    trans_api:add(Th, {TableName, {Key, Val}}),
+                {ok, value, ValReturn} = trans_api:read(Th, {TableName, Key}),
+                {ok, transaction_discarded} = trans_api:discard(Th),
+                application:stop(transaktion),
+                Key == KeyReturn andalso Val == ValReturn
             end).
 
 %%%%%%%%%%%%%%%
 %%% Helpers %%%
 %%%%%%%%%%%%%%%
-boolean(aa) -> false;
-boolean(_) -> true.
+
 
 %%%%%%%%%%%%%%%%%%
 %%% Generators %%%
 %%%%%%%%%%%%%%%%%%
-mytype() -> term().
+
+%% Generate an atom that can be used as a table name,
+%% that is not the empty atom ''.
+table_name() ->
+    ?SUCHTHAT(N, atom(), N /= '').
