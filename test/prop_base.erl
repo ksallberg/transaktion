@@ -2,6 +2,11 @@
 
 -include_lib("proper/include/proper.hrl").
 
+-export([ prop_set_data/0
+        , prop_sanity/0
+        , prop_tables_remain/0
+        ]).
+
 %% rebar3 proper
 %% rebar3 proper -n 10000
 %% rebar3 proper -p prop_test
@@ -11,9 +16,6 @@
 %% > proper_gen:pick(proper_types:string()).
 %% > proper_gen:pick(prop_base:table_name()).
 %% > proper_gen:pick(prop_base:table()).
-
-
--compile(export_all).
 
 %%%%%%%%%%%%%%%%%%
 %%% Properties %%%
